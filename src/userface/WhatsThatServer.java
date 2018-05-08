@@ -14,6 +14,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -35,7 +36,7 @@ public class WhatsThatServer extends Application {
 	private TextField portField;
 	
 	private final ConcurrentHashMap<String, PrintWriter> map = new ConcurrentHashMap<>();
-	private Controller controls;
+	//private Controller controls;
 	private final double heightMulti = .8;
 	
     private final int programWidth = 1000;
@@ -66,7 +67,6 @@ public class WhatsThatServer extends Application {
 		mainScene = new Scene(mainPane, programWidth, programHeight);
 		
 		mainArea = initializeMainTextArea();
-		controls = new Controller(new Model(true), new View(null, mainArea));
 		mainArea.setEditable(false);
 		mainPane.setTop(mainArea);
 		
@@ -76,7 +76,7 @@ public class WhatsThatServer extends Application {
 		mainStage.setScene(mainScene);
 		mainStage.show();
 	}
-	// TODO the buttons will not show because of this area.
+	
 	private TextArea initializeMainTextArea() {
 		TextArea area = new TextArea(NetworkUtility.getHostAddresses());
 		area.setMaxHeight(programHeight * heightMulti);
@@ -89,14 +89,14 @@ public class WhatsThatServer extends Application {
 	private FlowPane initializeButtonComponents() {
 		FlowPane fp = new FlowPane();
 		// ----------------------------- components to send to all clients -----------------------/
-		Label msgLabel = new Label("  Log: ");
+		Label msgLabel = new Label("  To All: ");
 		msgField = new TextField();
 		msgField.setEditable(false);
 		Button msgButton = new Button("Send");
 		msgButton.setDisable(true);
 		msgButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent arg0) {
-				if (NetworkUtility.isValidMessage(msgField.getText()) == false) { return; }
+				if (StringUtility.isValidMessage(msgField.getText()) == false) { return; }
 				announce(MessageType.constructServerMesaage(msgField.getText()));
 				msgField.clear();
 			}
@@ -166,8 +166,11 @@ public class WhatsThatServer extends Application {
 				mainArea.appendText("Port has been finalized. \n");
 			}
 		});
+		//Label playersLabel = new Label(" Players: ");
+		//ComboBox<String> playersBox = new ComboBox<String>();
+		//playersBox.getItems().addAll("1", "2", "3", "4", "5", "6", "7", "8");
+		//playersBox.getSelectionModel().select(1);
 		
-		fp.getChildren().add(new Label("       "));
 		fp.getChildren().add(startButton);
 		fp.getChildren().add(stopButton);
 		fp.getChildren().add(checkUsersButton);
@@ -178,10 +181,14 @@ public class WhatsThatServer extends Application {
 		fp.getChildren().add(msgLabel);
 		fp.getChildren().add(msgField);
 		fp.getChildren().add(msgButton);
+		//fp.getChildren().add(playersBox);
 		return fp;
 	}
 	
 	private void startServerAction() {
+		/*int portNumber = Integer.valueOf(portField.getText().trim().replace("~", "")).intValue();
+		controls.initializeServerConnection(map, mainArea, portNumber);
+		*/
 		if (isRunning == false) {
 			isRunning = true;
 			mainServer = new Server(map, mainArea, Integer.valueOf(portField.getText()));

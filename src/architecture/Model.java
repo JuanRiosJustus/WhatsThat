@@ -1,13 +1,18 @@
 package architecture;
 
+import java.io.PrintWriter;
+import java.util.concurrent.ConcurrentHashMap;
+
 import game.Game;
 
 public class Model {
 	
 	private boolean isServer; 
-	private Game game = new Game();
+	//private Game game = new Game();
 	
-	public Model(boolean isServer) { this.isServer = isServer; }
+	public Model(boolean isServer) { 
+		this.isServer = isServer; 
+	}
 	
 	public void initializeServerComponents() {
 		

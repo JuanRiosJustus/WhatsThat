@@ -3,11 +3,12 @@ package messaging;
 public enum MessageType {
 	
 	Unknown("Unknown"),
-	Chat("Chat"),
+	Public("Public"),
+	Private("Private"),
 	Connect("Connect"),
 	Disconnect("Disconnect"),
 	Done("Done"),
-	GameOn("GameOn"),
+	Game("Game"),
 	JustConnected("~NULL~Connect"),
 	JustDisconnected("~NULL~Disconnect"),
 	ServerActionsCompleted("Server~NULL~Done");
@@ -16,14 +17,18 @@ public enum MessageType {
 	
 	MessageType(String msg) { message = msg; }
 	
-	public static boolean isChatMessage(String msg) { return msg.equalsIgnoreCase(Chat.toString()); }
-	public static boolean isConnectMessage(String msg) { return msg.equalsIgnoreCase(Connect.toString()); }
-	public static boolean isDisconnectMessage(String msg) { return msg.equalsIgnoreCase(Disconnect.toString()); }
-	public static boolean isDoneMessage(String msg) { return msg.equalsIgnoreCase(Done.toString()); }
-	
+	/**
+	 * Given a string determines if the given string matches a particular
+	 * constant's string representation.
+	 * @param msgType string under question.
+	 * @return the constant it represents. Return unknown if no constants 
+	 * can be represented by the given string.
+	 */
 	public static MessageType getMessageType(String msgType) {
-		if (isChatMessage(msgType)) {
-			return Chat;
+		if (isPublicMessage(msgType)) {
+			return Public;
+		} else if (isPrivateMessage(msgType)) {
+			return Private;
 		} else if (isConnectMessage(msgType)) {
 			return Connect;
 		} else if (isDisconnectMessage(msgType)) {
@@ -35,7 +40,12 @@ public enum MessageType {
 		}
 	}
 	
-	public static String constructServerMesaage(String msg) { return "Server~" + msg + "~Chat"; }
+	private static boolean isPublicMessage(String msg) { return msg.equalsIgnoreCase(Public.toString()); }
+	private static boolean isPrivateMessage(String msg) { return msg.equalsIgnoreCase(Private.toString()); }
+	private static boolean isConnectMessage(String msg) { return msg.equalsIgnoreCase(Connect.toString()); }
+	private static boolean isDisconnectMessage(String msg) { return msg.equalsIgnoreCase(Disconnect.toString()); }
+	private static boolean isDoneMessage(String msg) { return msg.equalsIgnoreCase(Done.toString()); }
 	
+	public static String constructServerMesaage(String msg) { return "Server~" + msg + "~Chat"; }
 	public String toString() { return message; }
 }

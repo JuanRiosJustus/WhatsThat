@@ -27,9 +27,8 @@ public class Client implements Runnable {
 			while ((stream = reader.readLine()) != null) {
 				
 				msg = new Message(stream);
-				
 				switch (msg.getType()) {
-					case Chat: {
+					case Public: {
 						chatArea.appendText("[" + msg.getSender() + "]: " + msg.getContent() + "\n");
 						chatArea.positionCaret(chatArea.getText().length());
 					} break;
@@ -41,6 +40,9 @@ public class Client implements Runnable {
 	                    chatArea.appendText(msg.getSender() + " has disconnected.\n");
 	                    chatArea.positionCaret(chatArea.getText().length());
 					} break;
+					case Private: {
+						chatArea.appendText(msg.getContent().substring(msg.getContent().indexOf(":")) + " (private)\n");
+					} break;
 					default: {
 						// TODO make sure to do this later...
 					} break;
@@ -50,5 +52,4 @@ public class Client implements Runnable {
 			chatArea.appendText("Error connecting to server...\n");
 		}
 	}
-
 }

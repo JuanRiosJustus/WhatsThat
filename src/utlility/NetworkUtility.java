@@ -8,6 +8,8 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Enumeration;
 
+import messaging.MessageType;
+
 public class NetworkUtility {
 	
 	/**
@@ -79,19 +81,6 @@ public class NetworkUtility {
 		}
 	    return sb.toString();
 	}
-	/**
-	 * Given a string, determines if the given string
-	 * does not contain the character used to parse; '~'.
-	 * 
-	 * @param msg Message to determine if is valid to send
-	 * @return true if the index of the parse character
-	 * was not found within the given string.
-	 */
-	public static boolean isValidMessage(String msg) { 
-		if (msg == null || msg.length() < 1) { return false; }
-		return msg.indexOf('~') == -1;
-	}
-	
 	public static boolean isHostAvailable(String address, int port) {
 		try {
 			InetSocketAddress sa = new InetSocketAddress(address, port);

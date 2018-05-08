@@ -55,7 +55,7 @@ public class WhatsThatClient extends Application {
     @Override
     public void start(Stage arg01) {
         initializeComponents(arg01);
-        initializeAnimation();
+        //initializeAnimation();
     }
 
     /**
@@ -71,7 +71,6 @@ public class WhatsThatClient extends Application {
         mainPane = new VBox();
         HBox hboxPane = new HBox();
         scene = new Scene(mainPane, programWidth, programHeight);
-       
         //scene.setOnKeyPressed(e -> { System.out.println(e.getCode()); }); // send input to context manipulator
         
         Canvas canv = constructCanvasComponent();
@@ -151,13 +150,17 @@ public class WhatsThatClient extends Application {
         submitButton.setPrefWidth(programWidth * (widthMulti * componentWidthMulti));
         
         submitButton.setOnAction(new EventHandler<ActionEvent>() {
-			@Override
-			public void handle(ActionEvent arg0) {
-				if (!controller.isConnectedToServer() && !hasCorrectFields()) { return; }
-				if (!controller.isConnectedToServer()) { initializeConnectionAction(); return; }
-				if (controller.isConnectedToServer()) { 
-					controller.sendChatMessage(personalField.getText().trim().replace("~", "")); 
+			@Override public void handle(ActionEvent arg0) {
+
+				if (controller.isConnectedToServer() == false && hasCorrectFields()) { 
+					initializeConnectionAction(); 
 					return; 
+				}
+				
+				if (controller.isConnectedToServer()) { 
+					controller.sendMessage(personalField.getText());
+					personalField.clear();
+					return;
 				}
 			}	
         });
@@ -280,7 +283,6 @@ public class WhatsThatClient extends Application {
     }
     
     private void initializeConnectionAction() {
-    	if (!controller.isConnectedToServer()) { return; }
     	
     	String endAddress = addressField.getText().trim().replace("~", "");
     	String username = usernameField.getText().trim().replace("~", "");
@@ -293,6 +295,9 @@ public class WhatsThatClient extends Application {
     	
 		controller.initializeUsername(username);
 		controller.initializeClientConnection(endAddress, portNumber);
+		addressField.setEditable(false);
+		usernameField.setEditable(false);
+		portField.setEditable(false);
 		listenForServer();
     }
 }
