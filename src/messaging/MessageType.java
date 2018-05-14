@@ -1,5 +1,7 @@
 package messaging;
 
+import network.User;
+
 public enum MessageType {
 	
 	Unknown("Unknown"),
@@ -7,8 +9,8 @@ public enum MessageType {
 	Private("Private"),
 	Connect("Connect"),
 	Disconnect("Disconnect"),
-	Done("Done"),
 	Game("Game"),
+	Finalize("Finalize"),
 	JustConnected("~NULL~Connect"),
 	JustDisconnected("~NULL~Disconnect"),
 	ServerActionsCompleted("Server~NULL~Done");
@@ -33,19 +35,22 @@ public enum MessageType {
 			return Connect;
 		} else if (isDisconnectMessage(msgType)) {
 			return Disconnect;
-		} else if (isDoneMessage(msgType)) {
-			return Done;
+		} else if (isFinalizeMessage(msgType)) {
+			return Finalize;
 		} else {
 			return Unknown;
 		}
 	}
 	
+	
 	private static boolean isPublicMessage(String msg) { return msg.equalsIgnoreCase(Public.toString()); }
 	private static boolean isPrivateMessage(String msg) { return msg.equalsIgnoreCase(Private.toString()); }
 	private static boolean isConnectMessage(String msg) { return msg.equalsIgnoreCase(Connect.toString()); }
 	private static boolean isDisconnectMessage(String msg) { return msg.equalsIgnoreCase(Disconnect.toString()); }
-	private static boolean isDoneMessage(String msg) { return msg.equalsIgnoreCase(Done.toString()); }
+	private static boolean isFinalizeMessage(String msg) { return msg.equalsIgnoreCase(Finalize.toString()); }
 	
-	public static String constructServerMesaage(String msg) { return "Server~" + msg + "~Chat"; }
+	public static String constructServerChatMesaage(String msg) { return "Server~" + msg + "~Chat"; }
+	public static String constructServerFinalizationMessage(String newName) { return "Server~" + newName + "~" + Finalize.toString(); }
+	
 	public String toString() { return message; }
 }

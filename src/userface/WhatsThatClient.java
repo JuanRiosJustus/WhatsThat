@@ -25,6 +25,7 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import network.Client;
+import utlility.Instructions;
 import utlility.NetworkUtility;
 
 public class WhatsThatClient extends Application {
@@ -55,7 +56,7 @@ public class WhatsThatClient extends Application {
     @Override
     public void start(Stage arg01) {
         initializeComponents(arg01);
-        //initializeAnimation();
+        initializeAnimation();
     }
 
     /**
@@ -278,7 +279,7 @@ public class WhatsThatClient extends Application {
     
     // start listening to server...
     private void listenForServer() {
-    	Thread newThread = new Thread(new Client(chatArea, users, controller.getBufferedReader()));
+    	Thread newThread = new Thread(new Client(chatArea, controller.getIOStream(), users, controller.getBufferedReader()));
     	newThread.start();
     }
     

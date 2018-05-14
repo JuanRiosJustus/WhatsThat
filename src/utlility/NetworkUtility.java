@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Random;
 
 import messaging.MessageType;
 
@@ -81,6 +82,13 @@ public class NetworkUtility {
 		}
 	    return sb.toString();
 	}
+	/**
+	 * Givent he host and and address of an end point, determines if the address
+	 * if accepting connections.
+	 * @param address ip of end address.
+	 * @param port port assignment to use.
+	 * @return
+	 */
 	public static boolean isHostAvailable(String address, int port) {
 		try {
 			InetSocketAddress sa = new InetSocketAddress(address, port);

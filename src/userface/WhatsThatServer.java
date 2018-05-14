@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import architecture.Controller;
 import architecture.Model;
@@ -23,7 +24,9 @@ import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import messaging.MessageType;
+import network.IOStream;
 import network.Server;
+import network.User;
 import utlility.NetworkUtility;
 import utlility.StringUtility;
 
@@ -35,8 +38,7 @@ public class WhatsThatServer extends Application {
 	private TextField msgField;
 	private TextField portField;
 	
-	private final ConcurrentHashMap<String, PrintWriter> map = new ConcurrentHashMap<>();
-	//private Controller controls;
+	private Controller controls;
 	private final double heightMulti = .8;
 	
     private final int programWidth = 1000;
@@ -69,6 +71,7 @@ public class WhatsThatServer extends Application {
 		mainArea = initializeMainTextArea();
 		mainArea.setEditable(false);
 		mainPane.setTop(mainArea);
+		controls = new Controller(new Model(true), new View(null, mainArea)); // added
 		
 		FlowPane fp = initializeButtonComponents();
 		mainPane.setCenter(fp);
@@ -97,7 +100,7 @@ public class WhatsThatServer extends Application {
 		msgButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent arg0) {
 				if (StringUtility.isValidMessage(msgField.getText()) == false) { return; }
-				announce(MessageType.constructServerMesaage(msgField.getText()));
+				announce(MessageType.constructServerChatMesaage(msgField.getText()));
 				msgField.clear();
 			}
 		});
@@ -186,12 +189,9 @@ public class WhatsThatServer extends Application {
 	}
 	
 	private void startServerAction() {
-		/*int portNumber = Integer.valueOf(portField.getText().trim().replace("~", "")).intValue();
-		controls.initializeServerConnection(map, mainArea, portNumber);
-		*/
 		if (isRunning == false) {
 			isRunning = true;
-			mainServer = new Server(map, mainArea, Integer.valueOf(portField.getText()));
+			mainServer = new Server(controls.getIOStream(), mainArea, Integer.valueOf(portField.getText()));
 			mainThread = new Thread(mainServer);
 			mainThread.start();
 			mainArea.appendText("Server has been started. \n");
@@ -214,7 +214,7 @@ public class WhatsThatServer extends Application {
 	}
 	private void checkUsersAction() {
 		mainArea.appendText("\n\n Current users : \n");
-		Iterator<Entry<String, PrintWriter>> users = map.entrySet().iterator();
+		Iterator<Entry<String, User>> users = controls.getIOStream().getUsers().entrySet().iterator();
 		while (users.hasNext()) {
 			mainArea.appendText("[" + users.next().getKey() + "]");
 		}
@@ -229,7 +229,7 @@ public class WhatsThatServer extends Application {
 	}
 	
 	public void removeUser(String givenUsername) {
-		map.remove(givenUsername);
+		controls.getIOStream().getUsers().remove(givenUsername);
 		mainArea.appendText("[" + givenUsername + "] has been removed.\n");
 		mainArea.appendText("Telling users to remove [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());
@@ -238,13 +238,11 @@ public class WhatsThatServer extends Application {
 	}
 	// tells everyone
 	public void announce(String message) {
-		Iterator<Entry<String, PrintWriter>> it = map.entrySet().iterator();
+		Iterator<Entry<String, User>> it = controls.getIOStream().getUsers().entrySet().iterator();
 		while (it.hasNext()) {
 			try {
-				Entry<String, PrintWriter> r = it.next();
-				PrintWriter currentClient = r.getValue();
-				currentClient.println(message);
-				currentClient.flush();
+				Entry<String, User> r = it.next();
+				r.getValue().sendMessage(message);
 			} catch (Exception ex) {
 				// error
 				mainArea.appendText("Error sending message to clients...\n");

@@ -1,6 +1,11 @@
 package utlility;
 
+import java.util.Random;
+
 public class StringUtility {
+	
+	public static Random generator = new Random();
+	public static String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	
 	/**
 	 * Determines if a string is equivalent to a numeric value,
@@ -37,5 +42,18 @@ public class StringUtility {
 	}
 	public static boolean isValidMessage(String msg) {
 		return msg != null && msg.length() > 1 && msg.contains("~") == false; 
+	}
+	/**
+	 * Generates a random pin based upper and lower case letters including digits.
+	 * @param length
+	 * @return
+	 */
+	public static String generateRandomPin(int length) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			int index = generator.nextInt(characters.length());
+			sb.append(characters.charAt(index));
+		}
+		return sb.toString();
 	}
 }

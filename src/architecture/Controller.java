@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javafx.scene.control.TextArea;
 import messaging.Message;
 import messaging.MessageType;
+import network.IOStream;
 import network.Server;
 import utlility.NetworkUtility;
 
@@ -24,16 +25,15 @@ public class Controller {
 	private boolean isConnected;
 	private String username;
 	
-	/* Server specific instance variables */
-	private Server server;
-	private Thread thread;
 	private boolean isRunning;
-	private ConcurrentHashMap<String, PrintWriter> map;
 	
+	/* Input and Output Helper Class*/
+	private IOStream inputOutputStream;
 	
 	public Controller(Model newModel, View newView) {
 		model = newModel;
 		view = newView;
+		inputOutputStream = new IOStream();
 	}
 	public void initializeUsername(String name) { username = name; }
 	
@@ -55,13 +55,15 @@ public class Controller {
 		}
 	}
 	
+	public void handleIOStreams(IOStream str) {
+		model.handleIOStream(str);
+	}
 	
 	public void sendMessage(String msg) {
 		if (msg == null || msg.length() < 1) { return; }
 		message(msg.trim().replace("~", ""));
 	}
 	
-
 	// TODO
 	private void message(String msg) {
 		if (Message.isCorrectlyFormatedPrivateMessage(msg)) {
@@ -108,9 +110,11 @@ public class Controller {
 		}
 	}
 	
+	
 	public BufferedReader getBufferedReader() { return reader; }
 	public PrintWriter getPrintWriter() { return writer; }
 	public String getUsername() { return username; }
+	public IOStream getIOStream() { return inputOutputStream; }
 	public boolean isConnectedToServer() { return isConnected; }
 	public boolean isServerRunning() { return isRunning; }
 }

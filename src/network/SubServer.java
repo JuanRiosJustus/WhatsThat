@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import architecture.Controller;
 import javafx.scene.control.TextArea;
@@ -17,16 +18,15 @@ import utlility.NetworkUtility;
 import utlility.StringUtility;
 
 public class SubServer implements Runnable {
-	
 
 	private TextArea mainArea;
 	private PrintWriter writer;
 	private BufferedReader reader;
-	private ConcurrentHashMap<String, PrintWriter> map;
+	private IOStream ios;
 	
-	public SubServer(ConcurrentHashMap<String, PrintWriter> chm, Socket s, PrintWriter pw, TextArea a) {
+	public SubServer(IOStream str, Socket s, PrintWriter pw, TextArea a) {
 		writer = pw;
-		map = chm;
+		ios = str;
 		mainArea = a;
 		try {
 			reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -35,9 +35,10 @@ public class SubServer implements Runnable {
 		}
 	}
 	
+	
 	@Override
 	public void run() {
-		String message;
+		String message = null;
 		Message msg = null;
 		
 		try {
@@ -47,9 +48,20 @@ public class SubServer implements Runnable {
 				
 				switch(msg.getType()) {
 					case Connect: {
-						announce(msg.getSender() + "~" + msg.getContent() + "~" + MessageType.Public.toString());
-						addUser(msg.getSender());
-                        map.put(msg.getSender(), writer);
+						// TODO this should check if the user has a name
+						if (ios.getUsers().contains(msg.getSender())) {
+							String newName = msg.getSender() + StringUtility.generateRandomPin(5);
+							User usr = new User(newName, writer, ios.getUsers().isEmpty());
+							usr.sendMessage(MessageType.constructServerFinalizationMessage(newName)); // forces client to rename themselves
+							announce(newName + "~" + msg.getContent() + "~" + MessageType.Public.toString());
+							addUser(newName);
+	                        ios.getUsers().put(newName, usr);
+						} else {
+							announce(msg.getSender() + "~" + msg.getContent() + "~" + MessageType.Public.toString());
+							addUser(msg.getSender());
+							User usr = new User(msg.getSender(), writer, ios.getUsers().isEmpty());
+	                        ios.getUsers().put(msg.getSender(), usr);
+						}
 					} break;
 					case Disconnect: {
 						announce(msg.getSender() + "~has disconnected.~" + MessageType.Public.toString());
@@ -75,16 +87,10 @@ public class SubServer implements Runnable {
 			}
 		} catch (Exception ex) {
 			mainArea.appendText("A connection was lost.\n");
-			if (msg != null) { map.remove(msg.getSender()); }
+			if (msg != null) { ios.getUsers().remove(msg.getSender()); }
 		}
 	}
-	private String checkAndHandleIfTaken(String name) {
-		// handle the username such that a new username is sent to the user if taken
-		if (map.contains(name) == false) {
-			return name + "(taken)";
-		}
-		return name;
-	}
+	
 	private void announceTo(String msg) {
 		String[] content = msg.split("~");
 		if (Message.isCorrectlyFormatedPrivateMessage(content[1]) == false) {
@@ -94,14 +100,13 @@ public class SubServer implements Runnable {
 		String[] recipients = Message.getPrivateMessageRecipients(content[1]);
 		if (recipients == null) { return; }
 		try {
-			Iterator<Entry<String, PrintWriter>> iter = map.entrySet().iterator();
+			Iterator<Entry<String, User>> iter = ios.getUsers().entrySet().iterator(); //map.entrySet().iterator();
 			while (iter.hasNext()) {
-				Entry<String, PrintWriter> e = iter.next();
+				Entry<String, User> e = iter.next();
 				// check to see if the current nodes name, is a recipient
 				if (StringUtility.arrayContainsIgnoreCase(recipients, e.getKey())) { 
 					mainArea.appendText("[" + content[0] + "] -> " + "[" + e.getKey() + "]: " + content[1]);
-					e.getValue().println(msg);
-					e.getValue().flush();
+					e.getValue().sendMessage(msg);
 				}
 			}
 		} catch (Exception ex) {
@@ -109,22 +114,20 @@ public class SubServer implements Runnable {
 		}
 	}
 	private void announce(String message) {
-		Iterator<Entry<String, PrintWriter>> it = map.entrySet().iterator();
+		Iterator<Entry<String, User>> it = ios.getUsers().entrySet().iterator(); //map.entrySet().iterator();
 		String[] content = message.split("~");
 		mainArea.appendText("[" + content[0] + "]: " + content[1] + "\n");
 		while (it.hasNext()) {
 			try {
-				Entry<String, PrintWriter> r = it.next();
-				PrintWriter currentClient = r.getValue();
-				currentClient.println(message);
-				currentClient.flush();
+				Entry<String, User> r = it.next();
+				r.getValue().sendMessage(message);
 			} catch (Exception ex) {
 				mainArea.appendText("Error sending message to clients...\n");
 			}
 		}
 	}
 	private void removeUser(String givenUsername) {
-		map.remove(givenUsername);
+		ios.getUsers().remove(givenUsername);
 		mainArea.appendText("[" + givenUsername + "] has been removed.\n");
 		mainArea.appendText("Telling users to remove [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());

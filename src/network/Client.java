@@ -11,11 +11,13 @@ public class Client implements Runnable {
 	private TextArea chatArea;
 	private ArrayList<String> users;
 	private BufferedReader reader;
+	private IOStream ios;
 	
-	public Client(TextArea ta, ArrayList<String> list, BufferedReader br) {
+	public Client(TextArea ta, IOStream inout, ArrayList<String> list, BufferedReader br) {
 		chatArea = ta;
 		users = list;
 		reader = br;
+		ios = inout;
 	}
 	
 	@Override
@@ -28,10 +30,6 @@ public class Client implements Runnable {
 				
 				msg = new Message(stream);
 				switch (msg.getType()) {
-					case Public: {
-						chatArea.appendText("[" + msg.getSender() + "]: " + msg.getContent() + "\n");
-						chatArea.positionCaret(chatArea.getText().length());
-					} break;
 					case Connect: {
 						users.add(msg.getSender());
 					} break;
@@ -39,6 +37,10 @@ public class Client implements Runnable {
 	                    users.remove(msg.getSender());
 	                    chatArea.appendText(msg.getSender() + " has disconnected.\n");
 	                    chatArea.positionCaret(chatArea.getText().length());
+					} break;
+					case Public: {
+						chatArea.appendText("[" + msg.getSender() + "]: " + msg.getContent() + "\n");
+						chatArea.positionCaret(chatArea.getText().length());
 					} break;
 					case Private: {
 						chatArea.appendText(msg.getContent().substring(msg.getContent().indexOf(":")) + " (private)\n");

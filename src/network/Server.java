@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
+import architecture.Controller;
 import javafx.scene.control.TextArea;
 
 public class Server implements Runnable {
@@ -12,14 +13,13 @@ public class Server implements Runnable {
 	private int portNumber;
 	private TextArea mainArea;
 	private ServerSocket serverSocket;
-	private ConcurrentHashMap<String, PrintWriter> map;
+	private IOStream stream;
 	
-	public Server(ConcurrentHashMap<String, PrintWriter> chm, TextArea area, int port) {
-		map = chm;
+	public Server(IOStream str, TextArea area, int port) {
+		stream = str;
 		mainArea = area;
 		portNumber = port;
 	}
-	
 	@Override
 	public void run() {
 		try {
@@ -27,7 +27,7 @@ public class Server implements Runnable {
 			while (true) {
 				Socket clientSocket = serverSocket.accept();
 				PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-				Thread listener = new Thread(new SubServer(map, clientSocket, writer, mainArea));
+				Thread listener = new Thread(new SubServer(stream, clientSocket, writer, mainArea));
 				listener.start();
 				mainArea.appendText("A user has connected.\n");
 			}
