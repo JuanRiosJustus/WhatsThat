@@ -45,6 +45,9 @@ public class Client implements Runnable {
 					case Private: {
 						chatArea.appendText(msg.getContent().substring(msg.getContent().indexOf(":")) + " (private)\n");
 					} break;
+					case Finalize: {
+						ios.getInputQueue().add(stream);
+					} break;
 					default: {
 						// TODO make sure to do this later...
 					} break;

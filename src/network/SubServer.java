@@ -4,15 +4,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
-
-import architecture.Controller;
 import javafx.scene.control.TextArea;
 import messaging.Message;
+import messaging.MessageFactory;
 import messaging.MessageType;
 import utlility.NetworkUtility;
 import utlility.StringUtility;
@@ -23,6 +19,8 @@ public class SubServer implements Runnable {
 	private PrintWriter writer;
 	private BufferedReader reader;
 	private IOStream ios;
+	
+	private static final int PIN_LENGTH = 4;
 	
 	public SubServer(IOStream str, Socket s, PrintWriter pw, TextArea a) {
 		writer = pw;
@@ -48,19 +46,20 @@ public class SubServer implements Runnable {
 				
 				switch(msg.getType()) {
 					case Connect: {
-						// TODO this should check if the user has a name
-						if (ios.getUsers().contains(msg.getSender())) {
-							String newName = msg.getSender() + StringUtility.generateRandomPin(5);
+						if (ios.getUsers().containsKey(msg.getSender())) {
+							String newName = msg.getSender() + StringUtility.generateRandomPin(PIN_LENGTH);
 							User usr = new User(newName, writer, ios.getUsers().isEmpty());
-							usr.sendMessage(MessageType.constructServerFinalizationMessage(newName)); // forces client to rename themselves
-							announce(newName + "~" + msg.getContent() + "~" + MessageType.Public.toString());
-							addUser(newName);
+							usr.sendMessage(MessageFactory.constructMessage("SERVER", newName, MessageType.Finalize)); // forces client to rename themselves
 	                        ios.getUsers().put(newName, usr);
+							announce(MessageFactory.constructMessage(newName, msg.getContent(), MessageType.Public));
+							addUser(newName);
 						} else {
-							announce(msg.getSender() + "~" + msg.getContent() + "~" + MessageType.Public.toString());
-							addUser(msg.getSender());
 							User usr = new User(msg.getSender(), writer, ios.getUsers().isEmpty());
+							usr.sendMessage(MessageFactory.constructMessage("SERVER", msg.getSender(), MessageType.Finalize)); // client is allowed to use the name
 	                        ios.getUsers().put(msg.getSender(), usr);
+							announce(MessageFactory.constructMessage(msg.getSender(), msg.getContent(), MessageType.Public));
+							addUser(msg.getSender());
+	                        // tell the user that they are the hosst if they are the host... 
 						}
 					} break;
 					case Disconnect: {
@@ -71,11 +70,9 @@ public class SubServer implements Runnable {
 						announce(message);
 					} break;
 					case Private: {
-						// the message will contain the string who represents the receiver to send it to.
-						// if the message begins with someName and has a series of commas
 						announceTo(message);
 					} break;
-					case Game: {
+					case GameStartu: {
 						// do game Stuff
 						//announce(msg.getSender() + "~NULL~GameOn");
 					}
@@ -90,7 +87,6 @@ public class SubServer implements Runnable {
 			if (msg != null) { ios.getUsers().remove(msg.getSender()); }
 		}
 	}
-	
 	private void announceTo(String msg) {
 		String[] content = msg.split("~");
 		if (Message.isCorrectlyFormatedPrivateMessage(content[1]) == false) {
@@ -100,10 +96,10 @@ public class SubServer implements Runnable {
 		String[] recipients = Message.getPrivateMessageRecipients(content[1]);
 		if (recipients == null) { return; }
 		try {
-			Iterator<Entry<String, User>> iter = ios.getUsers().entrySet().iterator(); //map.entrySet().iterator();
+			Iterator<Entry<String, User>> iter = ios.getUsers().entrySet().iterator();
 			while (iter.hasNext()) {
 				Entry<String, User> e = iter.next();
-				// check to see if the current nodes name, is a recipient
+				// check to see if the current nodes name, is the recipient
 				if (StringUtility.arrayContainsIgnoreCase(recipients, e.getKey())) { 
 					mainArea.appendText("[" + content[0] + "] -> " + "[" + e.getKey() + "]: " + content[1]);
 					e.getValue().sendMessage(msg);
@@ -131,14 +127,12 @@ public class SubServer implements Runnable {
 		mainArea.appendText("[" + givenUsername + "] has been removed.\n");
 		mainArea.appendText("Telling users to remove [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());
-		announce(givenUsername + MessageType.JustDisconnected.toString());
-		announce(MessageType.ServerActionsCompleted.toString());
+		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Disconnect));
 	}
 	private void addUser(String givenUsername) {
 		mainArea.appendText(givenUsername + " is connected.\n");
 		mainArea.appendText("Telling users to add [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());
-		announce(givenUsername + MessageType.JustConnected.toString());
-		announce(MessageType.ServerActionsCompleted.toString());
+		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Connect));
 	}
 }

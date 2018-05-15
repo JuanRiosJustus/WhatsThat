@@ -1,6 +1,8 @@
 package userface;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import architecture.Controller;
 import architecture.Model;
@@ -24,6 +26,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import messaging.Message;
 import network.Client;
 import utlility.Instructions;
 import utlility.NetworkUtility;
@@ -52,6 +55,7 @@ public class WhatsThatClient extends Application {
     
     private Controller controller;
     private final ArrayList<String> users = new ArrayList<String>();
+    private boolean isFinalized;
     
     @Override
     public void start(Stage arg01) {
@@ -252,12 +256,40 @@ public class WhatsThatClient extends Application {
      * initializes the main loop of the game.
      */
     private void initializeAnimation() {
+    	// sets the username of the current client
+    	new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (isFinalized == false) {
+            		finalizeUsername();
+            	}
+			}
+    	}).start();
+    	
         new AnimationTimer() {
             @Override
             public void handle(long now) {
             	// TODO
             }
         }.start();
+    }
+    /**
+     * Sets the username of the client appropriately from the server.
+     */
+    private void finalizeUsername() {
+    	if (controller.getIOStream().getInputQueue().isEmpty()) { return; }
+    	ConcurrentLinkedQueue<String> msgs = controller.getIOStream().getInputQueue();
+    	if (Message.isFinalizationMessage(msgs.peek())) {
+    		String[] args = msgs.poll().split("~");
+    		controller.setUsername(args[1]);
+			Platform.runLater(new Runnable() {
+				@Override
+				public void run() {
+					usernameField.setText(args[1]);
+				}
+			});
+    		isFinalized = true;
+    	}
     }
     
     // checks username address and port fields.
@@ -294,7 +326,7 @@ public class WhatsThatClient extends Application {
     		return; 	
     	}
     	
-		controller.initializeUsername(username);
+		controller.setUsername(username);
 		controller.initializeClientConnection(endAddress, portNumber);
 		addressField.setEditable(false);
 		usernameField.setEditable(false);

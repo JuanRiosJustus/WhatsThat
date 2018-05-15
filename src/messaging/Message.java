@@ -1,5 +1,11 @@
 package messaging;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
+import network.User;
+
 public class Message {
 	
 	private String sender;
@@ -22,7 +28,6 @@ public class Message {
 	public String getContent() { return content; }
 	public MessageType getType() { return type; }
 	
-
 	/**
 	 * Checks to see if the given string starts with private.
 	 * @param str the string to check.
@@ -53,5 +58,11 @@ public class Message {
 		if (isCorrectlyFormatedPrivateMessage(msg) == false) { return null; }
 		String str = msg.substring(MessageType.Private.toString().length(), msg.indexOf(":"));
 		return str.replace(" ", "").split(",");
+	}
+	public static boolean isFinalizationMessage(String msg) {
+		if (msg == null || msg.length() < 1) { return false; }
+		String[] args = msg.split("~");
+		if (args == null || args.length != 3) { return false; }
+		return msg.contains(MessageType.Finalize.toString());
 	}
 }

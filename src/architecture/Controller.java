@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javafx.scene.control.TextArea;
 import messaging.Message;
+import messaging.MessageFactory;
 import messaging.MessageType;
 import network.IOStream;
 import network.Server;
@@ -35,7 +36,6 @@ public class Controller {
 		view = newView;
 		inputOutputStream = new IOStream();
 	}
-	public void initializeUsername(String name) { username = name; }
 	
 	public boolean initializeClientConnection(String address, int port) {	
 		try {
@@ -64,7 +64,6 @@ public class Controller {
 		message(msg.trim().replace("~", ""));
 	}
 	
-	// TODO
 	private void message(String msg) {
 		if (Message.isCorrectlyFormatedPrivateMessage(msg)) {
 			sendPrivateMessage(msg);
@@ -72,29 +71,36 @@ public class Controller {
 			sendPublicMessage(msg);
 		}
 	}
+	
+	/**
+	 * Sends a public message tot he server. 
+	 * @param msg message to be sent to the server.
+	 */
 	private void sendPublicMessage(String msg) {
 		try {
-			writer.println(username + "~" + msg + "~" + MessageType.Public.toString());
+			writer.println(MessageFactory.constructMessage(username, msg, MessageType.Public));
 			writer.flush();
 		} catch (Exception ex) {
-			// TODO error
-			view.appendTextToChat("Error sending message.");
+			view.appendTextToChat("Error sending message...");
 		}
 	}
+	/**
+	 * Sends a private message to the server.
+	 * @param msg the message to be sent to the server.
+	 */
 	private void sendPrivateMessage(String msg) {
 		try {
-			writer.println(username + "~" + msg + "~" + MessageType.Private.toString());
+			writer.println(MessageFactory.constructMessage(username, msg, MessageType.Private));
 			writer.flush();
 		} catch (Exception ex) {
-			// TODO error
-			view.appendTextToChat("Error sending message.");
+			view.appendTextToChat("Error sending message...");
 		}
 	}
 	public void terminateClientConnection() { sendDisconnectMessage(); disconnect(); }
 	
 	private void sendDisconnectMessage() {
 		try {
-			writer.println(username + "~ has disconnected.~" + MessageType.Disconnect.toString());
+			writer.println(MessageFactory.constructMessage(username, " has disconnected.", MessageType.Disconnect));
 			writer.flush();
 		} catch (Exception ex) {
 			view.appendTextToChat("Error sending disconnect message...");
@@ -109,8 +115,10 @@ public class Controller {
 			view.appendTextToChat("Error disconnecting from server...");
 		}
 	}
-	
-	
+
+	public void startServer() { isRunning = true; }
+	public void stopServer() { isRunning = false; }
+	public void setUsername(String name) { username = name; }
 	public BufferedReader getBufferedReader() { return reader; }
 	public PrintWriter getPrintWriter() { return writer; }
 	public String getUsername() { return username; }

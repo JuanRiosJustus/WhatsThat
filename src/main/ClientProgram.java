@@ -8,4 +8,3 @@ public class ClientProgram {
 		Application.launch(WhatsThatClient.class, args);
 	}
 }
-

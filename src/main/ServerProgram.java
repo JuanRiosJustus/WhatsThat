@@ -8,4 +8,3 @@ public class ServerProgram {
 		Application.launch(WhatsThatServer.class, args);
 	}
 }
-

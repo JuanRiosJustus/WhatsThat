@@ -16,4 +16,10 @@ public class Instructions {
 		sb.append("To send a private message, Type \"private <recipient><:><msg>\"");
 		return sb.toString();
 	}
+	public static String messageToHostOfLobby() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("You are the \"Host\" of the lobby\n");
+		sb.append("to start the game, type \"!gamestart\"");
+		return sb.toString();
+	}
 }

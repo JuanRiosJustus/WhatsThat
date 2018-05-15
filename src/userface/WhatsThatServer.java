@@ -23,6 +23,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import messaging.MessageFactory;
 import messaging.MessageType;
 import network.IOStream;
 import network.Server;
@@ -37,6 +38,7 @@ public class WhatsThatServer extends Application {
 	private TextArea mainArea;
 	private TextField msgField;
 	private TextField portField;
+	private ComboBox<String> playersCombobox;
 	
 	private Controller controls;
 	private final double heightMulti = .8;
@@ -46,12 +48,25 @@ public class WhatsThatServer extends Application {
 	
 	private Server mainServer;
 	private Thread mainThread;
+	private Thread gameThread;
 	private boolean isRunning;
 
 	@Override
 	public void start(Stage arg0) throws Exception {
 		initializeComponents(arg0);
+		initializeBackgroundThreads();
 		
+	}
+	private void initializeBackgroundThreads() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				while (isRunning) {
+					
+				}
+			}
+		});
 	}
 	private void initializeComponents(Stage mainStage) {
 		mainStage.setWidth(programWidth);
@@ -100,7 +115,8 @@ public class WhatsThatServer extends Application {
 		msgButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override public void handle(ActionEvent arg0) {
 				if (StringUtility.isValidMessage(msgField.getText()) == false) { return; }
-				announce(MessageType.constructServerChatMesaage(msgField.getText()));
+				announce(MessageFactory.constructMessage(NetworkUtility.getHostAddress(), msgField.getText(), MessageType.Public));
+				//announce(MessageType.constructServerChatMesaage(msgField.getText()));
 				msgField.clear();
 			}
 		});
@@ -169,10 +185,10 @@ public class WhatsThatServer extends Application {
 				mainArea.appendText("Port has been finalized. \n");
 			}
 		});
-		//Label playersLabel = new Label(" Players: ");
-		//ComboBox<String> playersBox = new ComboBox<String>();
-		//playersBox.getItems().addAll("1", "2", "3", "4", "5", "6", "7", "8");
-		//playersBox.getSelectionModel().select(1);
+		Label playersLabel = new Label(" Players: ");
+		playersCombobox = new ComboBox<String>();
+		playersCombobox.getItems().addAll("2", "3", "4", "5", "6", "7", "8");
+		playersCombobox.getSelectionModel().select(1);
 		
 		fp.getChildren().add(startButton);
 		fp.getChildren().add(stopButton);
@@ -184,13 +200,14 @@ public class WhatsThatServer extends Application {
 		fp.getChildren().add(msgLabel);
 		fp.getChildren().add(msgField);
 		fp.getChildren().add(msgButton);
-		//fp.getChildren().add(playersBox);
+		fp.getChildren().add(playersCombobox);
 		return fp;
 	}
 	
 	private void startServerAction() {
 		if (isRunning == false) {
 			isRunning = true;
+			controls.startServer();
 			mainServer = new Server(controls.getIOStream(), mainArea, Integer.valueOf(portField.getText()));
 			mainThread = new Thread(mainServer);
 			mainThread.start();
@@ -206,17 +223,22 @@ public class WhatsThatServer extends Application {
 			announce("Server: is stopping and all users will be disconnected");
 			mainArea.appendText("Server stopping... \n");
 			isRunning = false;
-			Platform.exit();
-			System.exit(0);
+			controls.stopServer();
+			//Platform.exit();					TODO
+			//System.exit(0);					TODO
 		} catch (Exception ex) {
 			mainArea.appendText("Error stopping Server... \n");
 		}
 	}
+	/**
+	 * Displays the current users on the server.
+	 */
 	private void checkUsersAction() {
 		mainArea.appendText("\n\n Current users : \n");
 		Iterator<Entry<String, User>> users = controls.getIOStream().getUsers().entrySet().iterator();
 		while (users.hasNext()) {
-			mainArea.appendText("[" + users.next().getKey() + "]");
+			User currentUser = users.next().getValue();
+			mainArea.appendText("[" + currentUser.getName() + "] " + currentUser.isHost() + "\n");
 		}
 	}
 	
@@ -224,8 +246,7 @@ public class WhatsThatServer extends Application {
 		mainArea.appendText(givenUsername + " is connected.\n");
 		mainArea.appendText("Telling users to add [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());
-		announce(givenUsername + MessageType.JustConnected.toString());
-		announce(MessageType.ServerActionsCompleted.toString());
+		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Connect));
 	}
 	
 	public void removeUser(String givenUsername) {
@@ -233,8 +254,7 @@ public class WhatsThatServer extends Application {
 		mainArea.appendText("[" + givenUsername + "] has been removed.\n");
 		mainArea.appendText("Telling users to remove [" + givenUsername + "]\n");
 		mainArea.positionCaret(mainArea.getLength());
-		announce(givenUsername + MessageType.JustDisconnected.toString());
-		announce(MessageType.ServerActionsCompleted.toString());
+		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Disconnect));
 	}
 	// tells everyone
 	public void announce(String message) {
@@ -244,7 +264,6 @@ public class WhatsThatServer extends Application {
 				Entry<String, User> r = it.next();
 				r.getValue().sendMessage(message);
 			} catch (Exception ex) {
-				// error
 				mainArea.appendText("Error sending message to clients...\n");
 			}
 		}
