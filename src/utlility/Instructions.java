@@ -22,4 +22,12 @@ public class Instructions {
 		sb.append("to start the game, type \"!gamestart\"");
 		return sb.toString();
 	}
+	public static String howToUseCommands() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("To use a command, type <command><commandName><...params...>\n");
+		sb.append("To start the game, type \"command startgame <no_space_topic> rounds\"\n");
+		sb.append("There must be no spaces inside the topic\n");
+		sb.append("The rounds must be a positive integer < 2^32\n");
+		return sb.toString();
+	}
 }

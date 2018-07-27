@@ -2,12 +2,10 @@ package game;
 
 public class Player {
 	
-	private static final int MAX_PHRASES = 2; 
-	
 	private String name;
 	private int points;
 	
-	private String[] phrases = new String[MAX_PHRASES];
+	private String[] phrases = new String[2];
 	
 	private Player(String nme) {
 		name = nme;

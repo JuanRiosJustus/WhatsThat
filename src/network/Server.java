@@ -13,9 +13,9 @@ public class Server implements Runnable {
 	private int portNumber;
 	private TextArea mainArea;
 	private ServerSocket serverSocket;
-	private IOStream stream;
+	private IOUHolder stream;
 	
-	public Server(IOStream str, TextArea area, int port) {
+	public Server(IOUHolder str, TextArea area, int port) {
 		stream = str;
 		mainArea = area;
 		portNumber = port;
@@ -27,7 +27,7 @@ public class Server implements Runnable {
 			while (true) {
 				Socket clientSocket = serverSocket.accept();
 				PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-				Thread listener = new Thread(new SubServer(stream, clientSocket, writer, mainArea));
+				Thread listener = new Thread(new SubServer(stream, clientSocket.getInputStream(), writer, mainArea));
 				listener.start();
 				mainArea.appendText("A user has connected.\n");
 			}

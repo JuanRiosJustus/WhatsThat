@@ -1,138 +1,167 @@
 package network;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import javafx.scene.control.TextArea;
-import messaging.Message;
-import messaging.MessageFactory;
-import messaging.MessageType;
-import utlility.NetworkUtility;
-import utlility.StringUtility;
 
-public class SubServer implements Runnable {
+import commands.CommandHandler;
+import dialogs.Constants;
+import javafx.scene.control.TextArea;
+import messaging.*;
+import responsesRequests.GameStartResponse;
+import utlility.JavaFXUtils;
+import utlility.TypeMatcher;
+
+public class SubServer extends NetworkNode implements Runnable {
 
 	private TextArea mainArea;
 	private PrintWriter writer;
-	private BufferedReader reader;
-	private IOStream ios;
+	private Network network;
+	private CommandHandler handler;
+	private Thread gameFeedbackThread;
 	
-	private static final int PIN_LENGTH = 4;
-	
-	public SubServer(IOStream str, Socket s, PrintWriter pw, TextArea a) {
+	public SubServer(IOUHolder iou, InputStream s, PrintWriter pw, TextArea a) {
+		super(new BufferedReader(new InputStreamReader(s)), iou);
 		writer = pw;
-		ios = str;
 		mainArea = a;
-		try {
-			reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
-		} catch (Exception ex) {
-			mainArea.appendText("Unexpected error occurred...\n");
-		}
+		network = new Network();
+		handler = new CommandHandler();
 	}
-	
-	
+
+    /**
+     * Handles the stream of input incoming connections
+     */
 	@Override
 	public void run() {
 		String message = null;
 		Message msg = null;
+		MessageType type;
+		usermap.put("GAME", new User("GAME"));
+		usermap.put("SERVER", new User("SERVER"));
 		
 		try {
-			while ((message = reader.readLine()) != null) {
-				
-				msg = new Message(message);
-				
-				switch(msg.getType()) {
+			while ((message = input.readLine()) != null) {
+                msg = MessageUtils.parseMessageBuild(message);
+                type = MessageUtils.getMessageType(msg.getMessageTypeValueAsString());
+                JavaFXUtils.threadSafeAppendToTextAreaForServer(mainArea, msg);
+
+				switch(type) {
 					case Connect: {
-						if (ios.getUsers().containsKey(msg.getSender())) {
-							String newName = msg.getSender() + StringUtility.generateRandomPin(PIN_LENGTH);
-							User usr = new User(newName, writer, ios.getUsers().isEmpty());
-							usr.sendMessage(MessageFactory.constructMessage("SERVER", newName, MessageType.Finalize)); // forces client to rename themselves
-	                        ios.getUsers().put(newName, usr);
-							announce(MessageFactory.constructMessage(newName, msg.getContent(), MessageType.Public));
-							addUser(newName);
-						} else {
-							User usr = new User(msg.getSender(), writer, ios.getUsers().isEmpty());
-							usr.sendMessage(MessageFactory.constructMessage("SERVER", msg.getSender(), MessageType.Finalize)); // client is allowed to use the name
-	                        ios.getUsers().put(msg.getSender(), usr);
-							announce(MessageFactory.constructMessage(msg.getSender(), msg.getContent(), MessageType.Public));
-							addUser(msg.getSender());
-	                        // tell the user that they are the hosst if they are the host... 
-						}
+						handleUserJustConnectedAction(msg);
 					} break;
 					case Disconnect: {
-						announce(msg.getSender() + "~has disconnected.~" + MessageType.Public.toString());
-                        removeUser(msg.getSender());
+						handleUserJustDisconnectedAction(usermap.get(msg.getAuthor()), msg);
 					} break;
 					case Public: {
-						announce(message);
+						network.announceMessagePublicly(usermap, msg);
 					} break;
-					case Private: {
-						announceTo(message);
+					case Command: {
+					    // TODO this is unmaintained, and can be scrapped/ or implemented.
+						// Commands are invoked as >Command >CommandName >CommandParams
+                        JavaFXUtils.threadSafeAppendToTextArea(mainArea, "Parsing command...");
+                        //appendStringToMainAreaRunLater("Attempting to parse command...");
+						//Message response = handler.handleCommand(usermap, ioqueue, msg, usermap.get(msg.getAuthor()).isHost());
+                        //handleParticularResponseRoutine(response);
+						//Message mssg = MessageUtils.constructMessage("SERVER", response.getContent(), MessageType.Public);
+						//network.announceMessagePublicly(usermap, mssg);
+						//appendStringToMainAreaRunLater("Command has been parsed.");
 					} break;
-					case GameStartu: {
-						// do game Stuff
-						//announce(msg.getSender() + "~NULL~GameOn");
-					}
+                    case Draw: {
+                        network.announceMessagePublicly(usermap, msg);
+                    } break;
 					default: {
 						// TODO man, this needs to be done later...
+                        JavaFXUtils.threadSafeAppendToTextArea(mainArea, message);
 					} break;
 				}
-				
 			}
 		} catch (Exception ex) {
-			mainArea.appendText("A connection was lost.\n");
-			if (msg != null) { ios.getUsers().remove(msg.getSender()); }
-		}
-	}
-	private void announceTo(String msg) {
-		String[] content = msg.split("~");
-		if (Message.isCorrectlyFormatedPrivateMessage(content[1]) == false) {
-			mainArea.appendText("**" + content[0] + "** failed to send a private message.\n");
-			return;
-		}
-		String[] recipients = Message.getPrivateMessageRecipients(content[1]);
-		if (recipients == null) { return; }
-		try {
-			Iterator<Entry<String, User>> iter = ios.getUsers().entrySet().iterator();
-			while (iter.hasNext()) {
-				Entry<String, User> e = iter.next();
-				// check to see if the current nodes name, is the recipient
-				if (StringUtility.arrayContainsIgnoreCase(recipients, e.getKey())) { 
-					mainArea.appendText("[" + content[0] + "] -> " + "[" + e.getKey() + "]: " + content[1]);
-					e.getValue().sendMessage(msg);
-				}
-			}
-		} catch (Exception ex) {
-			mainArea.appendText("Error sending message to recipient(s");
-		}
-	}
-	private void announce(String message) {
-		Iterator<Entry<String, User>> it = ios.getUsers().entrySet().iterator(); //map.entrySet().iterator();
-		String[] content = message.split("~");
-		mainArea.appendText("[" + content[0] + "]: " + content[1] + "\n");
-		while (it.hasNext()) {
-			try {
-				Entry<String, User> r = it.next();
-				r.getValue().sendMessage(message);
-			} catch (Exception ex) {
-				mainArea.appendText("Error sending message to clients...\n");
+		    JavaFXUtils.threadSafeAppendToTextArea(mainArea, Constants.ERROR_CLIENT_DISCONNECTED);
+			JavaFXUtils.threadSafeAppendToTextArea(mainArea, ex.getMessage());
+			if (msg != null) { 
+				usermap.remove(msg.getAuthor());
 			}
 		}
 	}
-	private void removeUser(String givenUsername) {
-		ios.getUsers().remove(givenUsername);
-		mainArea.appendText("[" + givenUsername + "] has been removed.\n");
-		mainArea.appendText("Telling users to remove [" + givenUsername + "]\n");
-		mainArea.positionCaret(mainArea.getLength());
-		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Disconnect));
+
+	public void handleParticularResponseRoutine(Message mes) {
+		/*if (TypeMatcher.isInstanceOf(mes, GameStartResponse.class) && handler.hasGameStarted()) {
+		    startFeedbackThread((GameStartResponse) mes);
+		}*/
 	}
-	private void addUser(String givenUsername) {
-		mainArea.appendText(givenUsername + " is connected.\n");
-		mainArea.appendText("Telling users to add [" + givenUsername + "]\n");
+
+    /**
+     * A continuous thread which spits out all infromation from the game to the players
+     */
+	public void startFeedbackThread(GameStartResponse resp) {// send message to all players
+        /*gameFeedbackThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // while the game is running
+                while (handler.hasGameStarted()) { // ensure that the server is running
+                    handleOutputFromGame();
+                }
+            }
+        });
+        gameFeedbackThread.start();*/
+	}
+    /**
+	 * // CLIENT GETS UNPARSED INFO! FIX THIS!
+     * // MAYBE THIS WILL BE DONE LATER, idk
+     * Announces the output from the game, should anything be recieved
+     */
+	private void handleOutputFromGame() {
+        /*if (ioqueue.containsOutgoingElements()) {
+            // recieve message from the game...
+            String response = (String) ioqueue.dequeueToExternal();
+            //response = response.substring(response.indexOf("|") + 1, response.lastIndexOf("|"));
+            Message msg = MessageUtils.constructMessage("GAME", response, MessageType.Game);
+
+            network.announceMessagePublicly(usermap, msg);
+            //mainArea.appendText("[GAME]" + announcement.build() + " \n");
+            mainArea.appendText(MessageUtils.readableMessageFormatForServer(msg));
+        }*/
+    }
+
+    /**
+     * Given a username, check to see if it is already contained within the
+     * map of names.
+     * @param username name to check for.
+     * @return the name that is not already used by a user.
+     */
+	private String handleUsernameTakenRoutine(String username) {
+	    StringBuilder sb = new StringBuilder(username);
+	    while (usermap.containsKey(sb.toString())) {
+	        sb.append(".jr");
+        }
+        return sb.toString();
+	}
+	/**
+	 * Handles the disconnection of a user.
+	 * @param usr usr that disconnected
+	 * @param msg information about the users disconnection
+	 */
+	private void handleUserJustDisconnectedAction(User usr, Message msg) {
+		usermap.remove(usr.getName());
+		network.announceDisconnectionMessage(usermap, msg.getAuthor());
+		JavaFXUtils.threadSafeAppendToTextArea(mainArea, usr.getName() + " has disconnected.");
 		mainArea.positionCaret(mainArea.getLength());
-		announce(MessageFactory.constructMessage(givenUsername, "NULL", MessageType.Connect));
+	}
+
+    /**
+     * Given a message signifying that a user just connected, handle all of the
+     * utilities for when a user connects to the server.
+     * @param msg information about the users connection.
+     */
+	private void handleUserJustConnectedAction(Message msg) {
+		String name = handleUsernameTakenRoutine(msg.getAuthor());
+		User usr = new User(name, writer, usermap.isEmpty());
+		network.announceUpdateMessage(usr, name);
+		network.announceConnectionMessage(usermap, name);
+		
+		usermap.put(usr.getName(), usr);
+		JavaFXUtils.threadSafeAppendToTextArea(mainArea, usr.getName() + " has connected.");
+		mainArea.positionCaret(mainArea.getLength());
 	}
 }
