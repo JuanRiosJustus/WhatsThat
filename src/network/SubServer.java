@@ -5,13 +5,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
+import Logging.Log;
 import commands.CommandHandler;
 import dialogs.Constants;
+import game.Stopwatch;
 import javafx.scene.control.TextArea;
 import messaging.*;
-import responsesRequests.GameStartResponse;
 import utlility.JavaFXUtils;
-import utlility.TypeMatcher;
 
 public class SubServer extends NetworkNode implements Runnable {
 
@@ -44,6 +44,8 @@ public class SubServer extends NetworkNode implements Runnable {
 			while ((message = input.readLine()) != null) {
                 msg = MessageUtils.parseMessageBuild(message);
                 type = MessageUtils.getMessageType(msg.getMessageTypeValueAsString());
+
+                // check if the last message was a draw and the timer has not past the delay
                 JavaFXUtils.threadSafeAppendToTextAreaForServer(mainArea, msg);
 
 				switch(type) {
@@ -79,21 +81,23 @@ public class SubServer extends NetworkNode implements Runnable {
 		} catch (Exception ex) {
 		    JavaFXUtils.threadSafeAppendToTextArea(mainArea, Constants.ERROR_CLIENT_DISCONNECTED);
 			JavaFXUtils.threadSafeAppendToTextArea(mainArea, ex.getMessage());
+            Log.getInstance().logErrorln(getClass().getName(), 81, ex.getMessage());
 			if (msg != null) { 
 				usermap.remove(msg.getAuthor());
 			}
 		}
 	}
 
+	/*
 	public void handleParticularResponseRoutine(Message mes) {
 		/*if (TypeMatcher.isInstanceOf(mes, GameStartResponse.class) && handler.hasGameStarted()) {
 		    startFeedbackThread((GameStartResponse) mes);
-		}*/
+		}
 	}
 
     /**
      * A continuous thread which spits out all infromation from the game to the players
-     */
+     *
 	public void startFeedbackThread(GameStartResponse resp) {// send message to all players
         /*gameFeedbackThread = new Thread(new Runnable() {
             @Override
@@ -105,7 +109,7 @@ public class SubServer extends NetworkNode implements Runnable {
             }
         });
         gameFeedbackThread.start();*/
-	}
+	//}
     /**
 	 * // CLIENT GETS UNPARSED INFO! FIX THIS!
      * // MAYBE THIS WILL BE DONE LATER, idk

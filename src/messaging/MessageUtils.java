@@ -12,7 +12,7 @@ public class MessageUtils {
      * @return formated message contents.
      */
     public static String readableMessageFormatForClient(Message msg) {
-        return "[" + msg.getAuthor() + "]: " + msg.getContent() + "\n";
+        return "[" + msg.getAuthor() + "]: " + msg.getContent();
     }
     /**
      * Constructs a readable form of a message.
@@ -23,7 +23,7 @@ public class MessageUtils {
         StringBuilder sb = new StringBuilder();
         sb.append("[" + msg.getAuthor() + "]: " + msg.getContent());
         sb.append(" (" + MessageUtils.getMessageType(msg).toString() + ") ");
-        return sb.toString() + "\n";
+        return sb.toString();
     }
 
 	/**

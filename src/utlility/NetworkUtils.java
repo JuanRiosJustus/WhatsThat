@@ -12,7 +12,9 @@ import java.util.Random;
 import messaging.MessageType;
 
 public class NetworkUtils {
-	
+
+    private NetworkUtils() { }
+
 	/**
 	 * Determines if the given integer is a valid
 	 * number to represent a port number.
@@ -99,5 +101,18 @@ public class NetworkUtils {
 		} catch (Exception ex) {
 			return false;
 		}
+	}
+
+	/**
+	 * checks to see that the given url is a valid img url
+	 * where the protocol and extension are checked,
+	 * @param url
+	 * @return
+	 */
+	public static boolean isValidImageUrl(String url) {
+		if (url == null || url.length() < 1) { return false; }
+		boolean isValidProtocol = url.startsWith("https://") || url.startsWith("http://");
+		boolean isValidImage = url.endsWith(".png") || url.endsWith(".jpg") || url.endsWith(".jpeg");
+		return isValidImage && isValidProtocol;
 	}
 }

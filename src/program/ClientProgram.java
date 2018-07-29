@@ -1,11 +1,10 @@
 package program;
 
-import dialogs.MainComponent;
 import javafx.application.Application;
-import dialogs.WhatsThatClient;
+import dialogs.ClientDialog;
 
 public class ClientProgram {
 	public static void main(String[] args) {
-		Application.launch(WhatsThatClient.class, args);
+		Application.launch(ClientDialog.class, args);
 	}
 }

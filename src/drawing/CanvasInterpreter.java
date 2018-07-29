@@ -3,8 +3,10 @@ package drawing;
 import dialogs.Constants;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Paint;
+import utlility.NetworkUtils;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -97,7 +99,9 @@ public class CanvasInterpreter {
         } else if (me.isSecondaryButtonDown()) {
             // write text or image to screen
             mediaObject = new CanvasObject(p, inputField.getText());
-            canvas.fillText(inputField.getText(), p.getX(), p.getY());
+            if (NetworkUtils.isValidImageUrl(mediaObject.getData())) {
+                canvas.fillText(inputField.getText(), p.getX(), p.getY());
+            }
             inputField.clear();
         }
     }

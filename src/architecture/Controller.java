@@ -303,7 +303,7 @@ public class Controller {
 	 */
 	public void handleServerCommand(TextField tf, TextArea ta) {
 		String cmd = tf.getText();
-		if (cmd.equalsIgnoreCase(Constants.CLEAR_COMMAND)) {
+		if (cmd.equalsIgnoreCase(Constants.CLEAR_BUTTON_TEXT)) {
 			ta.clear();
 		}
 
@@ -315,6 +315,7 @@ public class Controller {
 	    networkInfo = data;
 	}
 	public boolean getHasAttemptedAdjustment() { return attemptedAdjustment; }
+	public void hasAttemptedAdjustment() { attemptedAdjustment = true; }
 	public int getPort() { return networkInfo.getPort(); }
 	public String getEndIP() { return networkInfo.getEndIP(); }
 	public String getName() { return networkInfo.getName(); }

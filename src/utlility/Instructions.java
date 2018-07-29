@@ -1,14 +1,13 @@
 package utlility;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
 public class Instructions {
 	public static String howToSetup() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("To get started, enter the address to connect to \n");
-		sb.append("along with the username you wish to go by. \n");
+		sb.append("Welcome!\n");
+		sb.append("To start, enter the chatroom information\n");
+		sb.append("to connect to, along with the port to use.\n");
+		sb.append("Enter a suitable name for the chat!\n");
+		sb.append("----------------------------------------------\n");
 		return sb.toString();
 	}
 	public static String howToMessage() {

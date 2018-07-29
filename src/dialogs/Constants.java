@@ -47,15 +47,15 @@ public class Constants {
     public static final String STOP_BUTTON_TEXT = "Stop";
     public static final String USERS_BUTTON_TEXT = "Users";
     public static final String MODE_BUTTON_TEXT = "Mode";
+    public static final String SAVE_BUTTON_TEXT = "Save";
+    public static final String FETCH_BUTTON_TEXT = "Fetch";
     public static final String QUEUE_BUTTON_TEXT = "Queue";
     public static final String SETTINGS_BUTTON_TEXT = "Settings";
     public static final String PORT_LABEL_TEXT = "Port:";
     public static final String ADDRESS_LABEL_TEXT = "Address:";
     public static final String USERNAME_LABEL_TEXT = "\tUsername:";
-
-    /* SERVER INPUT COMMANDS */
     public static final String COMMAND_BUTTON_TEXT = "Command";
-    public static final String CLEAR_COMMAND = "Clear";
+    public static final String CLEAR_BUTTON_TEXT = "Clear";
 
     /* ERRORES */
     public static final String ERROR_NAMETOOSHORT = "Name appears to be too short";
